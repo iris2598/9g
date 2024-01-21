@@ -1,9 +1,10 @@
 {
+  "extends": "./tsconfig.paths.json",
   "compilerOptions": {
     "target": "es5",
     "jsx": "react-jsx",
-    "module": "es6",
-    "moduleResolution": "node10",
+    "module": "esnext",
+    "moduleResolution": "node",
     "allowJs": true,
     "sourceMap": true,
     "outDir": "./dist/",
@@ -12,8 +13,9 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "strictNullChecks": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noStrictGenericChecks": false
   },
-  "include": ["./src/", "./typings"],
+  "include": ["./src/", "./typings", "craco.config.cjs"],
   "exclude": ["node_modules"]
 }
