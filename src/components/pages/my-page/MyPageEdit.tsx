@@ -1,57 +1,93 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import style from './mypageedit.module.css';
 import MyPageDropdown from './MyPageDropdwon';
 import getImgPreview from '@utils/getImgPreview';
 import getNutritionStandard from '@utils/getNutritionStandard';
 import { mapGoaltoMsg, mapActivitytoMsg, findKeyByValue } from './mapMsg';
 import ButtonCommon from '@components/UI/ButtonCommon';
-import {
-  calAge,
-  calBMR,
-  calBMRCalories,
-  adjustCaloriesByGoal,
-} from './calUserData';
-
-import { userData, UserData } from './DummyUserData';
+import { calBMR, calBMRCalories, adjustCaloriesByGoal } from './calUserData';
+import { loginUser } from '@components/store/userLoginRouter';
+import { UserData } from './MypageTypes';
+import useApi, { TriggerType } from '@hooks/useApi';
+import usePresignedUrl from '@hooks/usePresignedUrl';
+import useS3ImgUpload from '@hooks/useS3ImgUpload';
 
 const goalTypes = ['근육증량', '체중감량', '체중유지', '체중증량'];
 const activityType = ['비활동적', '약간 활동적', '활동적', '매우 활동적'];
 
 const MyPageEdit = () => {
-  const [data, setData] = useState<UserData>(userData);
-  const age = calAge({ data });
-  const goalMsg = mapGoaltoMsg[data.goal];
-  const activityMsg = mapActivitytoMsg[data.activity];
-  const [profileImage, setProfileImage] = useState<string | undefined>(
-    userData.img
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const {
+    trigger,
+  }: {
+    trigger: TriggerType;
+  } = useApi({
+    method: 'put',
+  });
+
+  const { userData, goalMsg, activityMsg } = location.state;
+  const [data, setData] = useState(userData);
+
+  const [previewImage, setPreviewImage] = useState<string | undefined>(
+    data.profileImage
   );
-  const [file, setFile] = useState<File | null>(null);
-  const [bmr, setBmr] = useState(calBMR({ data, age }));
+  const [file, setFile] = useState<File | null>(userData.profileImage);
+  const [fileChanged, setFileChanged] = useState(false);
+  const [bmr, setBmr] = useState(calBMR({ data }));
   const [bmrCalories, setBmrCalories] = useState(calBMRCalories({ bmr, data }));
   const [goalCalories, setGoalCalories] = useState(
     Math.round(adjustCaloriesByGoal({ data, bmrCalories }))
   );
   const [isEditingData, setIsEditingData] = useState(false);
   const [prevWeight, setPrevWeight] = useState(data.weight);
-  const [prevHeight, setPrevHeight] = useState(data.weight);
+  const [prevHeight, setPrevHeight] = useState(data.height);
   const [selectedGoal, setSelectedGoal] = useState(goalMsg);
   const [selectedActity, setSelectedActity] = useState(activityMsg);
   const [isActivityDropdownVisible, setActivityDropdownVisible] =
     useState(false);
   const [isGoalDropdownVisible, setGoalDropdownVisible] = useState(false);
+  const [updated, setUpdated] = useState(false);
 
   const navigate = useNavigate();
+
+  const { getPresignedUrl, presignedUrl, error, loading } = usePresignedUrl({
+    fileName: file?.name,
+    path: `image/presigned-url/profile/${file?.name}`,
+  });
+
+  useEffect(() => {
+    if (file) {
+      getPresignedUrl({
+        fileName: file.name,
+        path: `image/presigned-url/profile/${file.name}`,
+      });
+    }
+  }, [getPresignedUrl, file]);
+
+  const { uploadToS3 } = useS3ImgUpload();
 
   const imgInputRef = useRef<HTMLInputElement>(null);
   const handleImageClick = () => {
     imgInputRef.current?.click();
   };
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const imgFile = event.target.files?.[0];
-    if (imgFile) {
-      getImgPreview(imgFile, setFile, setProfileImage);
+  const handleImageSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const previewImgFile = event.target.files?.[0] || null;
+
+    if (previewImgFile) {
+      getImgPreview(previewImgFile, setPreviewImage, (file) => {
+        if (file instanceof File) {
+          setFile(file);
+          setFileChanged(true);
+        }
+      });
+    } else {
+      setPreviewImage(previewImage);
     }
   };
 
@@ -66,7 +102,7 @@ const MyPageEdit = () => {
   };
 
   const updateDataAndCalories = (updatedData: UserData) => {
-    const updatedBmr = calBMR({ data: updatedData, age });
+    const updatedBmr = calBMR({ data: updatedData });
     const updatedBmrCalories = calBMRCalories({
       bmr: updatedBmr,
       data: updatedData,
@@ -87,11 +123,11 @@ const MyPageEdit = () => {
   const handleSelect = (type: 'goal' | 'activity', value: string) => {
     const newGoalValue = findKeyByValue(mapGoaltoMsg, value);
     if (type === 'goal' && newGoalValue) {
-      const newGoal = parseInt(newGoalValue, 10);
-      if ([1, 2, 3, 4].includes(newGoal)) {
-        const updatedData: UserData = {
+      const newGoal = newGoalValue;
+      if (['1', '2', '3', '4'].includes(newGoal)) {
+        const updatedData = {
           ...data,
-          goal: newGoal as 1 | 2 | 3 | 4,
+          dietGoal: newGoal,
         };
         updateDataAndCalories(updatedData);
         setSelectedGoal(value);
@@ -100,11 +136,11 @@ const MyPageEdit = () => {
     } else if (type === 'activity') {
       const newActivityValue = findKeyByValue(mapActivitytoMsg, value);
       if (newActivityValue) {
-        const newActivity = parseInt(newActivityValue, 10);
-        if ([1, 2, 3, 4].includes(newActivity)) {
-          const updatedData: UserData = {
+        const newActivity = newActivityValue;
+        if (['1', '2', '3', '4'].includes(newActivity)) {
+          const updatedData = {
             ...data,
-            activity: newActivity as 1 | 2 | 3 | 4,
+            activityAmount: newActivity,
           };
           updateDataAndCalories(updatedData);
           setSelectedActity(value);
@@ -124,35 +160,93 @@ const MyPageEdit = () => {
     try {
       const updatedData = {
         ...data,
-        img: profileImage,
+        diet_goal: Number(findKeyByValue(mapGoaltoMsg, selectedGoal)),
+        activityAmount: Number(
+          findKeyByValue(mapActivitytoMsg, selectedActity)
+        ),
         height: Number(prevHeight),
         weight: Number(prevWeight),
+        profileImage: file,
       };
-      // 데이터 업데이트
+      setData(updatedData);
       updateDataAndCalories(updatedData);
     } catch (error) {
       console.log('profile data updating error', error);
     }
   };
 
-  const saveAndNavigate = () => {
-    const updatedNutrients = getNutritionStandard(data);
-    const updatedGoalCalories = Math.round(
-      adjustCaloriesByGoal({ data, bmrCalories })
-    );
+  const uploadProfileImage = async () => {
+    try {
+      if (presignedUrl.data && file) {
+        const uploadUrl = await uploadToS3({
+          presignedUrl: presignedUrl.data,
+          file,
+        });
+        if (uploadUrl) {
+          const uploadedImageUrl = presignedUrl.data.split('?')[0];
+          console.log(uploadedImageUrl);
 
+          return uploadedImageUrl;
+        }
+      }
+    } catch (error) {
+      console.error('이미지 업로드 실패', error);
+    }
+  };
+
+  const saveAndNavigate = async () => {
+    let uploadedImageUrl;
+    // const updatedNutrients
+    let updatedNutrients = getNutritionStandard(data);
+    console.log(updatedNutrients);
+
+    if (!(data.dietGoal && data.targetCalories && data.gender)) {
+      const updatedNutrients = {
+        carbohydrates: 0,
+        dietaryFiber: 0,
+        proteins: 0,
+        fats: 0,
+      };
+      console.log(updatedNutrients);
+    }
+
+    if (fileChanged) {
+      uploadedImageUrl = await uploadProfileImage();
+      console.log(uploadedImageUrl);
+    }
+
+    console.log(file);
     const updatedData = {
       ...data,
+      dietGoal: findKeyByValue(mapGoaltoMsg, selectedGoal),
+      activityAmount: findKeyByValue(mapActivitytoMsg, selectedActity),
       height: Number(prevHeight),
       weight: Number(prevWeight),
-      targetNutrients: updatedNutrients,
-      targetCalories: updatedGoalCalories,
+      recommendIntake: updatedNutrients,
+      targetCalories: goalCalories,
+      profileImage: uploadedImageUrl || file,
     };
+    const { username, ...dataToSend } = updatedData;
+    console.log(updatedData);
 
     updateDataAndCalories(updatedData);
-    // store에 저장하는 로직 추가해야함
-    navigate('/my-page', { state: { updatedData } });
+    dispatch(loginUser(updatedData));
+
+    await trigger({
+      applyResult: true,
+      isShowBoundary: false,
+      data: dataToSend,
+      path: 'user',
+    });
+
+    setUpdated(true);
   };
+
+  useEffect(() => {
+    if (updated) {
+      navigate('/my-page');
+    }
+  }, [updated, navigate]);
 
   return (
     <>
@@ -165,11 +259,11 @@ const MyPageEdit = () => {
             ref={imgInputRef}
             onChange={handleImageSelect}
           />
-          {profileImage ? (
+          {previewImage ? (
             <>
               <img
                 className={style.userProfile}
-                src={profileImage}
+                src={previewImage}
                 alt='사용자 프로필'
                 onClick={handleImageClick}
               />
@@ -194,7 +288,7 @@ const MyPageEdit = () => {
           <div className={style.infoTitle}>목표</div>
           <MyPageDropdown
             items={goalTypes}
-            selectedItem={selectedGoal}
+            selectedItem={selectedGoal ? `${selectedGoal}` : '목표 설정'}
             onSelectItem={(value) => handleSelect('goal', value)}
             toggleDropdown={toggleGoalDropdown}
             isDropdownVisible={isGoalDropdownVisible}
@@ -202,7 +296,9 @@ const MyPageEdit = () => {
         </div>
         <div className={style.goaltInfo}>
           <div className={style.goalTitle}>목표 칼로리</div>
-          <div className={style.goalDetail}>{goalCalories}kcal</div>
+          <div className={style.goalDetail}>
+            {goalCalories ? `${goalCalories}` : '활동량 설정'}kcal
+          </div>
         </div>
       </div>
 

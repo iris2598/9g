@@ -9,7 +9,7 @@ interface UseApiParams {
   path?: string;
   data?: any;
   shouldInitFetch?: boolean;
-  initialResult?: string;
+  initialResult?: any;
 }
 interface TriggerPropsType
   extends Omit<UseApiParams, 'shouldInitFetch' | 'initialResult'> {
@@ -17,17 +17,23 @@ interface TriggerPropsType
   isShowBoundary?: boolean;
 }
 
-type TriggerType = ({
+export type TriggerType = ({
   ...props
 }: TriggerPropsType) => Promise<AxiosResponse<any, any>>;
 
-const useApi = ({
+const useApi = <T>({
   method = 'get',
   path = '',
   data = {},
   shouldInitFetch = false,
   initialResult = '',
-}: UseApiParams) => {
+}: UseApiParams): {
+  result: T | undefined;
+  loading: boolean;
+  reqIdentifier: string;
+  trigger: TriggerType;
+  error: any;
+} => {
   const [result, setResult] = useState(initialResult);
   const [loading, setLoading] = useState(false);
   const [reqIdentifier, setReqIdentifier] = useState('');
