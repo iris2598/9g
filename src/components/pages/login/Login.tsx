@@ -10,6 +10,33 @@ import Toast from '@components/UI/Toast';
 import ToastText from '@components/UI/ToastText';
 import { checkValuesNullOrEmpty } from '@utils/checkValuesNullOrEmpty';
 
+interface UserDataType {
+  email: string;
+  username: string;
+  birthDay: string;
+  profileImage: string;
+  membership: boolean;
+  gender: number;
+  recentHealthInfoId: string;
+  weight: number;
+  height: number;
+  targetWeight: number;
+  dietGoal: number;
+  activityAmount: number;
+  targetCalories: number;
+  recommendIntake: {
+    carbohydrates: number;
+    proteins: number;
+    fats: number;
+    dietaryFiber: number;
+  };
+  age: number;
+}
+
+interface UserReturnedDataType {
+  data: UserDataType[];
+}
+
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -70,12 +97,14 @@ const Login = () => {
           } else {
             dispatch(loginUser(data.data));
           }
-          if (checkValuesNullOrEmpty(data)) {
-          }
         },
       }
     );
   };
+
+  useEffect(() => {
+    console.log({ error, loading, postResult });
+  }, [error, loading, postResult]);
 
   useEffect(() => {
     userInfo && healthInfo && navigate('/home');

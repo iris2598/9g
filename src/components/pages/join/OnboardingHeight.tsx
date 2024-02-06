@@ -32,7 +32,9 @@ const OnboardingHeight: React.FC<OnboardingProps> = ({
             border: 'none',
           }}
           value={inputValue}
-          onChange={() => {}}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+          }}
         />
         <span
           style={{ marginLeft: '5px', verticalAlign: 'top' }}
