@@ -37,7 +37,6 @@ const MyPageSettings = () => {
   const [newNickname, setNewNickName] = useState(nickname);
   const [toastText, setToastText] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [logOutValid, setLogOutValid] = useState(false);
   const nickNameGet = useApi<Nickname>({});
   const nickNamePut = useApi<Nickname>({
     method: 'put',

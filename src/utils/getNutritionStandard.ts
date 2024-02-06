@@ -1,7 +1,6 @@
 import { UserData } from '@components/pages/my-page/MypageTypes';
 
 const getNutritionStandard = (data: UserData) => {
-  // const userGoal = data.dietGoal.toString();
   const userGoal = data.dietGoal;
 
   const userGoalCalories = data.targetCalories;

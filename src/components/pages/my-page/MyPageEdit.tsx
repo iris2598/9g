@@ -53,7 +53,7 @@ const MyPageEdit = () => {
 
   const navigate = useNavigate();
 
-  const { getPresignedUrl, presignedUrl, error, loading } = usePresignedUrl({
+  const { getPresignedUrl, presignedUrl } = usePresignedUrl({
     fileName: file?.name,
     path: `image/presigned-url/profile/${file?.name}`,
   });

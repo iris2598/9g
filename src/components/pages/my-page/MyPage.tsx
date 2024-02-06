@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import style from './mypage.module.css';
 import { PencilIcon } from '@assets/PencilIcon';
-import { mapGoaltoMsg, mapActivitytoMsg, findKeyByValue } from './mapMsg';
-import { useDispatch, useSelector } from 'react-redux';
+import { mapGoaltoMsg, mapActivitytoMsg } from './mapMsg';
+import { useSelector } from 'react-redux';
 import { RootState } from '@components/store';
 
 const MyPage = () => {
