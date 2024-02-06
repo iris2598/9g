@@ -43,6 +43,7 @@
   max-height: 66px;
   overflow-y: none;
   overflow-x: auto;
+  /* border-bottom: 2px solid #a0bfed; */
 }
 
 .selectedTagBox::-webkit-scrollbar {
@@ -67,5 +68,5 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-bottom: 2px solid #a0bfed;
+  /* border-bottom: 2px solid #a0bfed; */
 }
