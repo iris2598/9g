@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ButtonCommon from '@components/UI/ButtonCommon';
 import { MergingTags } from './MergingTags';
 import useApi from '@hooks/useApi';
+import gugramLogo from "../../../assets/images/9gram_logo.png"
 
 interface Food {
   foodName: string;
@@ -315,7 +316,7 @@ const RecordEdit = () => {
         <MergingTags tagData={foods} />
         <img
           className={styles.mealimg}
-          src={imgUrl || '/images/9gram_logo.png'}
+          src={imgUrl || gugramLogo}
           alt='식단이미지'
         />
       </div>
@@ -351,7 +352,7 @@ const RecordEdit = () => {
                         focus === index && styles.focusimg
                       }`}
                       id={food.foodName}
-                      src='/images/9gram_logo.png'
+                      src= {gugramLogo}
                       alt={food.foodName}
                       onClick={(e) => handleFocus(e)}
                     />

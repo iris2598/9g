@@ -3,6 +3,7 @@ import style from './mealImg.module.css';
 import ImgTagContent from './ImgTagContent';
 import { MealImgProps } from './RecordTypes';
 import getDates from '@utils/getDates';
+import gguLogoRecord from "../../../assets/images/ggu_logo_record.png";
 
 const MealImg = ({
   className,
@@ -28,7 +29,7 @@ const MealImg = ({
           <ImgTagContent
             data={data}
             selectedMealNumber={selectedMealNumber}
-            imgUrl={imgUrl || '/images/ggu_logo_record.png'}
+            imgUrl={imgUrl || gguLogoRecord}
             className={className}
           />
         ) : (

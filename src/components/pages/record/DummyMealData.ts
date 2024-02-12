@@ -1,3 +1,5 @@
+import recordExample from "../../../assets/images/record_example.png"
+
 export interface MealDetailData {
   [key: string]: {
     food: {
@@ -55,7 +57,7 @@ const mealDetailData: MealDetailData = {
       fats: 300,
       dietaryFiber: 200,
     },
-    imgurl: '/images/record_example.png',
+    imgurl: recordExample ,
   },
 
   2: {
@@ -147,7 +149,7 @@ const mealDetailData: MealDetailData = {
       fats: 25,
       dietaryFiber: 2,
     },
-    imgurl: '/images/record_example.png',
+    imgurl: recordExample,
   },
 
   4: {
