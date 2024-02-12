@@ -1,7 +1,7 @@
 import { Plus } from '@assets/Plus';
 import styles from '@components/pages/home/mealcard.module.css';
 import { useNavigate } from 'react-router-dom';
-const mealLogo = '/images/9gram_logo.png';
+import mealLogo from "../../../assets/images/9gram_logo.png";
 
 interface Props {
   date: string;

@@ -107,21 +107,26 @@ const getFetcher: (
 ) => Promise<AxiosResponse<any, any>> = async (path, params) => {
   return await api.get(path, { params });
 };
+
 const postFetcher = async (path: string, body: any) => {
   return await api.post(path, body);
 };
+
 const patchFetcher = async (path: string, body: any) => {
   return await api.put(path, body);
 };
+
 const putFetcher = async (path: string, body: any) => {
   return await api.put(path, body);
 };
+
 const deleteFetcher = async (path: string, params: any) => {
   return await api.delete(path, { params });
 };
 
 // const args = {path:string, body: any } as const;
 
+// http 메소드 별로 인수가 다양하다. 그 공통된 설정을 해주는 것 . 
 export const API_FETCHER: { [key in ApiMethods]: APiFetcher } = {
   get: (...args) => getFetcher(...args),
   post: (...args) => postFetcher(...args),

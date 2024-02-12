@@ -7,7 +7,7 @@ import useApi, { TriggerType } from '@hooks/useApi';
 import { Modal, mapSelectModalMsg } from '@components/UI/Modal';
 import { RecordProps } from './RecordTypes';
 import { Plus } from '@assets/Plus';
-const mealLogo = '/images/9gram_logo_box.png';
+import mealLogo from "../../../assets/images/9gram_logo_box.png";
 
 const Record = () => {
   const params = useParams();
