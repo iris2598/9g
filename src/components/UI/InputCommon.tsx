@@ -1,4 +1,10 @@
-import { forwardRef, useId, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import { useControlled } from '@hooks/useControlled';
 import classes from './inputCommon.module.css';
 import { getClassNamesArr } from '@utils/getClassesArr';
@@ -20,6 +26,7 @@ type InputPropsType = {
   active?: boolean;
   size?: CommonSizeType;
   style?: {};
+  autoComplete?: boolean;
 };
 const getModuleClassName = (
   customClassName: string | undefined,
@@ -56,6 +63,7 @@ const InputCommon = forwardRef(
       disabled,
       active,
       size = 'large',
+      autoComplete = false,
       ...props
     }: InputPropsType,
     ref
@@ -85,20 +93,20 @@ const InputCommon = forwardRef(
 
     return (
       <>
-        {onchange ? (
+        {props.onChange ? (
           <input
             id={id}
             value={input}
-            onChange={(e) => setInput(e)}
+            onChange={props.onChange}
             className={inputClass}
-            autoComplete='off'
+            autoComplete={autoComplete.toString()}
             {...props}
           />
         ) : (
           <input
             defaultValue={defaultValue}
             ref={inputRef}
-            autoComplete='off'
+            autoComplete={autoComplete.toString()}
             {...props}
             className={inputClass}
           />

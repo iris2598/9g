@@ -3,8 +3,17 @@ import './Onboarding.css';
 import NumericPad from './NumericPad';
 import { OnboardingProps } from './OnboardingGender';
 
-const OnboardingHeight: React.FC<OnboardingProps> = ({ onClickOnboarding }) => {
-  const [inputValue, setInputValue] = useState('');
+const OnboardingHeight: React.FC<OnboardingProps> = ({
+  userData,
+  onClickOnboarding,
+}) => {
+  const [inputValue, setInputValue] = useState(
+    userData.height?.toString() || ''
+  );
+
+  useEffect(() => {
+    console.log();
+  }, []);
 
   useEffect(() => onClickOnboarding({ ['height']: inputValue }), [inputValue]);
 
@@ -23,7 +32,9 @@ const OnboardingHeight: React.FC<OnboardingProps> = ({ onClickOnboarding }) => {
             border: 'none',
           }}
           value={inputValue}
-          onChange={() => {}}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+          }}
         />
         <span
           style={{ marginLeft: '5px', verticalAlign: 'top' }}

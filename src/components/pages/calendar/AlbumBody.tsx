@@ -5,10 +5,8 @@ import { useCalendarContext } from './Calendar';
 import classes from './album.module.css';
 const AlbumBody = ({
   idx,
-  setTarget,
   albumDay,
   onClickCards,
-  isLoading,
 }: {
   idx: number;
   setTarget: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
@@ -29,15 +27,15 @@ const AlbumBody = ({
             <div
               key={`album-${idx}`}
               onClick={() =>
-                onClickCards(`${albumDay.date}/${getMealsNumber[arr[0]]}`)
+                onClickCards(
+                  `${returnWithZero(albumDay.date)}/${getMealsNumber[arr[0]]}`
+                )
               }
             >
               <AlbumCell
                 arr={arr}
                 idx={idx}
                 key={`album-${idx}`}
-                setTarget={setTarget}
-                isLoading={isLoading}
               />
             </div>
           ))}

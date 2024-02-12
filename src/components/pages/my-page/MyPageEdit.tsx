@@ -53,7 +53,7 @@ const MyPageEdit = () => {
 
   const navigate = useNavigate();
 
-  const { getPresignedUrl, presignedUrl, error, loading } = usePresignedUrl({
+  const { getPresignedUrl, presignedUrl } = usePresignedUrl({
     fileName: file?.name,
     path: `image/presigned-url/profile/${file?.name}`,
   });
@@ -160,7 +160,7 @@ const MyPageEdit = () => {
     try {
       const updatedData = {
         ...data,
-        diet_goal: Number(findKeyByValue(mapGoaltoMsg, selectedGoal)),
+        dietGoal: Number(findKeyByValue(mapGoaltoMsg, selectedGoal)),
         activityAmount: Number(
           findKeyByValue(mapActivitytoMsg, selectedActity)
         ),
@@ -184,21 +184,15 @@ const MyPageEdit = () => {
         });
         if (uploadUrl) {
           const uploadedImageUrl = presignedUrl.data.split('?')[0];
-          console.log(uploadedImageUrl);
-
           return uploadedImageUrl;
         }
       }
-    } catch (error) {
-      console.error('이미지 업로드 실패', error);
-    }
+    } catch (error) {}
   };
 
   const saveAndNavigate = async () => {
     let uploadedImageUrl;
-    // const updatedNutrients
     let updatedNutrients = getNutritionStandard(data);
-    console.log(updatedNutrients);
 
     if (!(data.dietGoal && data.targetCalories && data.gender)) {
       const updatedNutrients = {
@@ -207,19 +201,16 @@ const MyPageEdit = () => {
         proteins: 0,
         fats: 0,
       };
-      console.log(updatedNutrients);
     }
 
     if (fileChanged) {
       uploadedImageUrl = await uploadProfileImage();
-      console.log(uploadedImageUrl);
     }
 
-    console.log(file);
     const updatedData = {
       ...data,
-      dietGoal: findKeyByValue(mapGoaltoMsg, selectedGoal),
-      activityAmount: findKeyByValue(mapActivitytoMsg, selectedActity),
+      dietGoal: Number(findKeyByValue(mapGoaltoMsg, selectedGoal)),
+      activityAmount: Number(findKeyByValue(mapActivitytoMsg, selectedActity)),
       height: Number(prevHeight),
       weight: Number(prevWeight),
       recommendIntake: updatedNutrients,
@@ -227,7 +218,6 @@ const MyPageEdit = () => {
       profileImage: uploadedImageUrl || file,
     };
     const { username, ...dataToSend } = updatedData;
-    console.log(updatedData);
 
     updateDataAndCalories(updatedData);
     dispatch(loginUser(updatedData));
