@@ -4,6 +4,7 @@ import MealTag from './MealTag';
 import MealNutritionAnalysis from './MealNutritionAnalysis';
 import style from './mealdetail.module.css';
 import { MealDetailProps } from './RecordTypes';
+import bannerImage from '../../../assets/images/recommendation_banner.png';
 
 const MealDetail = ({ date, data, selectedMealNumber }: MealDetailProps) => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const MealDetail = ({ date, data, selectedMealNumber }: MealDetailProps) => {
       >
         <img
           className={style.bannerBackground}
-          src='/images/recommendation_banner.png'
+          src= { bannerImage }
           alt='AI 식단 분석 서비스 이동 배너'
         />
         <div className={style.bannerFont}>

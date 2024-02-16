@@ -9,6 +9,7 @@
   height: auto;
   width: 390px;
   text-align: start;
+  margin-bottom: 10px;
 }
 
 .cards {
@@ -30,10 +31,8 @@
   border-radius: 7px;
   flex-direction: column;
   justify-content: space-between;
-  color: white;
   background-size: cover;
-  -webkit-text-stroke-width: 0.03px;
-  -webkit-text-stroke-color: black;
+  font-weight: 600;
 }
 
 .meal-img {

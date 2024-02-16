@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ButtonCommon from '../../UI/ButtonCommon';
 import OnboardingGender from './OnboardingGender';
@@ -7,119 +7,202 @@ import OnboardingHeight from './OnboardingHeight';
 import OnboardingWeight from './OnboardingWeight';
 import OnboardingGoal from './OnboardingGoal';
 import OnboardingActivity from './OnboardingActivity';
-import useApi from '@hooks/useApi';
 import useCachingApi from '@hooks/useCachingApi';
+import { checkValuesNullOrEmpty } from '@utils/checkValuesNullOrEmpty';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@components/store';
+import { UserInfo } from '@components/store/userLoginRouter';
+import RenderProgressBar from './RenderProgressBar';
+import getNutritionStandard from '@utils/getNutritionStandard';
+import {
+  adjustCaloriesByGoal,
+  calBMR,
+  calBMRCalories,
+} from '../my-page/calUserData';
+import { loginUser } from '@components/store/userLoginRouter';
 
-export interface userDataType {
-  gender: number | null;
-  birthDay: string;
-  height: number | null;
-  weight: number | null;
-  diet_goal: number | null;
-  activityAmount: number | null;
+export interface userPutDataType {
+  dietGoal?: string;
+  activityAmount?: string;
+  height?: number;
+  weight?: number;
+  gender?: string;
+  age?: number;
+  birthDay?: string;
 }
 
 interface OnBoardingResult {
-  data: string;
+  data: any;
   status: number;
 }
 
-//onboarding에서 앞의 데이터가 없을 때
+const initialUserInfo = {
+  activityAmount: undefined,
+  age: 0,
+  birthDay: '',
+  dietGoal: '',
+  gender: undefined,
+  height: undefined,
+  targetCalories: 0,
+  username: undefined,
+  weight: undefined,
+};
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const { step } = useParams();
-  const currentStep = Number(step) || 1;
+  const [curStep, setCurStep] = useState(Number(step) || 1);
+  const [userData, setUserData] = useState<any>(initialUserInfo);
+  const [navigateTrigger, setNavigateTrigger] = useState(false);
 
-  const [userData, setUserData] = useState({
-    gender: null,
-    birthDay: '',
-    height: null,
-    weight: null,
-    diet_goal: null,
-    activityAmount: null,
-  });
+  const dispatch = useDispatch();
 
-  const { loading, trigger } = useCachingApi<OnBoardingResult>({
+  const returnedUserData = useSelector(
+    (state: RootState) => state.user.userInfo
+  );
+  const { loading, trigger } = useCachingApi<any>({
     method: 'put',
     path: '/user',
   });
+  const changeTypedUserData: UserInfo = Object.assign(
+    {},
+    {
+      activityAmount:
+        returnedUserData.activityAmount &&
+        returnedUserData.activityAmount.toString(),
+      dietGoal: returnedUserData.dietGoal,
+      height: returnedUserData.height,
+      gender: returnedUserData.gender,
+      birthDay: returnedUserData.birthDay,
+      weight: returnedUserData.weight,
+    }
+  );
+  useEffect(() => {
+    navigateTrigger && navigate('/home');
+  }, [navigateTrigger]);
+
+  //fetched된 userData중 일부만 가져옴
+  useEffect(() => {
+    setUserData(changeTypedUserData);
+  }, [returnedUserData]);
+
+  const onClickTrigger = () => {
+    trigger(
+      { ...userData },
+      {
+        onSuccess: (data) => {
+          if (data.data.targetCalories && data.status === 200) {
+            dispatch(loginUser(userData));
+            setNavigateTrigger(true);
+          }
+        },
+      }
+    );
+  };
+
+  //목표칼로리, 영양성분 userData에 업데이트
+  const updateCalculatedData = (userData: any) => {
+    //goalCalrories 계산
+    const bmr = calBMR({ data: userData });
+    const bmrCalories = calBMRCalories({
+      bmr,
+      data: userData,
+    });
+    const goalCalories = Math.round(
+      adjustCaloriesByGoal({ data: userData, bmrCalories })
+    );
+    //영양성분 계산
+    const { carbohydrates, proteins, fats, dietaryFiber } =
+      getNutritionStandard(userData);
+
+    //userData에 세팅
+    setUserData((prev: any) => ({
+      ...prev,
+      ['targetCalories']: goalCalories,
+      ['recommendIntake']: {
+        carbohydrates,
+        proteins,
+        fats,
+        dietaryFiber,
+      },
+    }));
+  };
 
   const onNextClick = async () => {
-    //onBoarding에 정보가 비어있는 경우 해당 화면으로 navigate....
-    //api요청 보내지 않음
-    if (currentStep === 6) {
-      if (!loading) {
-        trigger(
-          { ...userData },
-          {
-            onSuccess: (data) => {
-              if (
-                data.data === '유저정보 및 유저건강정보 업데이트 성공' &&
-                data.status === 200
-              ) {
-                navigate('/home');
-              }
-            },
-          }
-        );
+    if (curStep === 6) {
+      //step마지막일때 객체가 비어있는지 확인 후
+      //비어있는 곳으로 이동
+      if (checkValuesNullOrEmpty(userData)) {
+        setCurStep(checkValuesNullOrEmpty(userData) as number);
+        return navigate(`/onboarding/${checkValuesNullOrEmpty(userData)}`);
+      } else {
+        updateCalculatedData(userData);
       }
     } else {
-      const nextStep = Math.min(6, currentStep + 1);
-      navigate(`/onboarding/${nextStep}`);
+      //step 1~5
+      setCurStep((prev) => prev + 1);
+      navigate(`/onboarding/${curStep + 1}`);
     }
   };
 
-  const onClickOnboarding = (onboardingInfo: object) => {
-    setUserData((prev) => ({ ...prev, ...onboardingInfo }));
+  const onClickOnboarding = (onboardingInfo: userPutDataType) => {
+    setUserData((prev: any) => ({
+      ...prev,
+      ...onboardingInfo,
+    }));
   };
 
+  //업데이트 영양성분과 목표 칼로리 모두 있을떄 감지해서 PUT요청
+  useEffect(() => {
+    if (
+      userData.activityAmount &&
+      userData.age &&
+      userData.birthDay &&
+      userData.dietGoal &&
+      userData.gender &&
+      userData.height &&
+      userData.recommendIntake?.carbohydrates &&
+      userData.recommendIntake?.dietaryFiber &&
+      userData.recommendIntake?.fats &&
+      userData.recommendIntake?.proteins
+    ) {
+      onClickTrigger();
+    }
+  }, [
+    userData.activityAmount &&
+      userData.age &&
+      userData.birthDay &&
+      userData.gender &&
+      userData.height &&
+      userData.recommendIntake?.carbohydrates &&
+      userData.recommendIntake?.dietaryFiber &&
+      userData.recommendIntake?.fats &&
+      userData.recommendIntake?.proteins,
+  ]);
+
   const isNextButtonDisabled = () => {
-    switch (currentStep) {
+    switch (curStep) {
       case 1:
-        return userData.gender === null;
+        return userData.gender === '';
       case 2:
-        return (
-          userData.birthDay === null ||
-          userData.birthDay.split('-').some((part) => part === '')
-        );
+        return userData.birthDay === '';
       case 3:
-        return userData.height === '';
+        return userData.height?.toString() === '';
       case 4:
-        return userData.weight === null;
+        return userData.weight?.toString() === '';
       case 5:
-        return userData.diet_goal === null;
+        return userData.dietGoal === '';
       case 6:
-        return userData.activityAmount === null;
+        return userData.activityAmount === '';
       default:
         return true;
     }
   };
 
-  useEffect(() => {
-    if (currentStep === 0) {
-      navigate('/auth');
-    }
-  }, [currentStep, navigate]);
-
-  const renderProgressBar = () => {
-    const steps = 6;
-    const progressBarSteps = [];
-
-    for (let i = 1; i <= steps; i++) {
-      const isActive = i <= currentStep;
-      progressBarSteps.push(
-        <div key={i} className={`progress-step ${isActive ? 'active' : ''}`} />
-      );
-    }
-
-    return progressBarSteps;
-  };
-
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -127,39 +210,39 @@ const Onboarding = () => {
     >
       <div>
         <div className='progress-bar' style={{ marginBottom: '50px' }}>
-          {renderProgressBar()}
+          {RenderProgressBar(curStep)}
         </div>
-        {currentStep === 1 && (
+        {curStep === 1 && (
           <OnboardingGender
             userData={userData}
             onClickOnboarding={onClickOnboarding}
           />
         )}
-        {currentStep === 2 && (
+        {curStep === 2 && (
           <OnboardingBirth
             userData={userData}
             onClickOnboarding={onClickOnboarding}
           />
         )}
-        {currentStep === 3 && (
+        {curStep === 3 && (
           <OnboardingHeight
             userData={userData}
             onClickOnboarding={onClickOnboarding}
           />
         )}
-        {currentStep === 4 && (
+        {curStep === 4 && (
           <OnboardingWeight
             userData={userData}
             onClickOnboarding={onClickOnboarding}
           />
         )}
-        {currentStep === 5 && (
+        {curStep === 5 && (
           <OnboardingGoal
             userData={userData}
             onClickOnboarding={onClickOnboarding}
           />
         )}
-        {currentStep === 6 && (
+        {curStep === 6 && (
           <OnboardingActivity
             userData={userData}
             onClickOnboarding={onClickOnboarding}

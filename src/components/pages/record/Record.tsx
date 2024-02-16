@@ -4,8 +4,10 @@ import getDates from '@utils/getDates';
 import { useState, useEffect } from 'react';
 import { mapSelectMealToMsg, mealTypes } from './recordMappingConstant';
 import useApi, { TriggerType } from '@hooks/useApi';
+import { Modal, mapSelectModalMsg } from '@components/UI/Modal';
 import { RecordProps } from './RecordTypes';
-const mealLogo = '/images/9gram_logo_box.png';
+import { Plus } from '@assets/Plus';
+import mealLogo from "../../../assets/images/9gram_logo_box.png";
 
 const Record = () => {
   const params = useParams();
@@ -21,6 +23,12 @@ const Record = () => {
       [number, number, string | null]
     >,
   });
+  const [showModal, setShowModal] = useState(false);
+  const [modalSelect, setModalSelect] = useState('');
+  const [modalMsg, setModalMsg] = useState('');
+  const [selectedMealDelete, setSelectedMealDelete] = useState<null | number>(
+    null
+  );
 
   const {
     trigger,
@@ -34,10 +42,10 @@ const Record = () => {
 
   useEffect(() => {
     trigger({});
-  }, []);
+  }, [data?.data?.dateArr?.length]);
 
   useEffect(() => {
-    if (data && data.data) {
+    if (data && data.data.dateArr?.length > 0) {
       setFoodData(data.data);
     }
   }, [data]);
@@ -54,18 +62,51 @@ const Record = () => {
   const handleMealClick = (meal: number) => {
     navigate(`/record/${selectedDate || todayDate}/${meal}`);
   };
-  const handleMealDelete = (meal: number) => {
+
+  const handleShowDelteModal = (
+    meal: number,
+    e: React.MouseEvent<HTMLImageElement>
+  ) => {
+    e.stopPropagation();
+    setShowModal(true);
+    setModalSelect('mealDelete');
+    setModalMsg(mapSelectModalMsg.mealDelete);
+    setSelectedMealDelete(meal);
+  };
+
+  const handleMealDelete = () => {
+    if (selectedMealDelete === null) return;
     const updatedFoodData = { ...foodData };
-    updatedFoodData.dateArr[meal - 1] = [meal, 0, null];
+    updatedFoodData.dateArr[selectedMealDelete - 1] = [
+      selectedMealDelete,
+      0,
+      null,
+    ];
     trigger({
       method: 'delete',
-      path: `/cumulative-record/meal?date=${dateSplit[0]}-${dateSplit[1]}-${dateSplit[2]}&meal=${meal}`,
+      path: `/records?date=${todayDate}&mealType=${selectedMealDelete}`,
     });
     setFoodData(updatedFoodData);
+    setShowModal(false);
+    setSelectedMealDelete(null);
+  };
+
+  const handleConfirm = () => {
+    if (modalSelect === 'mealDelete' && selectedMealDelete !== null) {
+      handleMealDelete();
+    }
   };
 
   return (
     <div>
+      {showModal && (
+        <Modal
+          modalSelect={modalSelect}
+          modalMsg={modalMsg}
+          onClose={() => setShowModal(false)}
+          onConfirm={handleConfirm}
+        />
+      )}
       <div className={style.meal_container}>
         <div className={style.meal_header}> {headerDate} </div>
         {foodData &&
@@ -83,13 +124,13 @@ const Record = () => {
                       src={mealData[2] || mealLogo}
                       alt='하루 식단 이미지'
                     />
-                    s
+
                     <div className={style.meal_time}>
                       {mapSelectMealToMsg[mealData[0]]}
                     </div>
                     <div className={style.meal_calories}>
                       {' '}
-                      {mealData[1] ?? 0} kcal{' '}
+                      {Math.round(mealData[1]) ?? 0} kcal{' '}
                     </div>
                   </>
                 ) : (
@@ -102,24 +143,19 @@ const Record = () => {
                   </>
                 )}
               </div>
-              <img
-                className={style.meal_button}
-                src={
-                  !mealData[1] && !mealData[2]
-                    ? '/icons/meal_plus_button.png'
-                    : '/icons/meal_delete.png'
-                }
-                onClick={() =>
-                  !mealData[1] && !mealData[2]
-                    ? handleMealClick(mealData[0])
-                    : handleMealDelete(mealData[0])
-                }
-                alt={
-                  !mealData[1] && !mealData[2]
-                    ? '하루 식단 추가 버튼'
-                    : '하루 식단 삭제 버튼'
-                }
-              />
+              {!mealData[1] && !mealData[2] ? (
+                <Plus
+                  className={style.meal_plusButton}
+                  onClick={(e) => handleMealClick(mealData[0])}
+                />
+              ) : (
+                <img
+                  className={style.meal_button}
+                  src={'/icons/meal_delete.png'}
+                  onClick={(e) => handleShowDelteModal(mealData[0], e)}
+                  alt={'하루 식단 삭제 버튼'}
+                />
+              )}
             </div>
           ))}
       </div>
